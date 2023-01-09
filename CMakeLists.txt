@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.0.0)
+project(BattleshipGame VERSION 0.1.0)
+
+include(CTest)
+enable_testing()
+
+set (CMAKE_CXX_STANDARD 20)
+
+add_library(battleshipLibs src/Graphics/graphics.cpp src/Logic/logic.cpp src/Ships/ships.cpp src/CPU/cpu.cpp)
+
+add_executable(BattleshipGame main.cpp)
+target_link_libraries(BattleshipGame battleshipLibs)
+# target_include_directories(BattleshipGame PRIVATE "$src")
+
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+include(CPack)
