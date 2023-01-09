@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Unnecessary files and folders
+**/.vscode
+**/build
+**/backup
+**/src(old)
+brudnopis.*
+tempCodeRunnerFile.*
+*.txt
