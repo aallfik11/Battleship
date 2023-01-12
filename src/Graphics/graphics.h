@@ -2,6 +2,7 @@
 #define GRAPHICS_H
 #include <iostream>
 #include <vector>
+#include <windows.h>
 #include "../Logic/logic.h"
 // this will also include text-based menus until I manage to learn an actual graphics framework/library
 
@@ -39,9 +40,11 @@ public:
     static void clearScreen();
     static void setCursorPosition(int x, int y);
     static void setConsoleColour(unsigned short colour);
-    static void displayMessage(const char* message, unsigned short colour);
+    static void displayMessage(const char *message, unsigned short colour);
     static void drawTile(int tileType, bool drawCursor = false);
+    static COORD currentConsoleCursorPosition();
     static void endLine(int offset = 1);
+    static void opponentShipStatus();
 };
 
 #endif /*GRAPHICS_H*/

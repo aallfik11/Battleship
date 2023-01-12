@@ -28,11 +28,44 @@ static const unsigned short COLOUR_SHIP = 136;
 static const unsigned short COLOUR_SHIP_HIT = 76;
 static const unsigned short COLOUR_WATER_HIT = 159;
 static const unsigned short COLOUR_WATER_HIT_CURSOR = 156;
+static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
 bool MainMenu::mCpu = true;
 
 void MainMenu::drawMenu()
 {
+    /*
+    changes the size of the cmd window as well as its' font, font size and disables the blinking underscore symbol
+    code spliced from a few stackoverflow posts
+    */
+    {
+        CONSOLE_FONT_INFOEX cfi;
+        cfi.cbSize = sizeof(cfi);
+        cfi.nFont = 0;
+        cfi.dwFontSize.X = 0;  // Width of each character in the font
+        cfi.dwFontSize.Y = 30; // Height
+        cfi.FontFamily = FF_DONTCARE;
+        cfi.FontWeight = FW_NORMAL;
+        std::wcscpy(cfi.FaceName, L"DejaVu Sans Mono"); // Choose your font
+        SetCurrentConsoleFontEx(hOut, FALSE, &cfi);
+
+        CONSOLE_CURSOR_INFO cursorInfo;
+        GetConsoleCursorInfo(hOut, &cursorInfo);
+        cursorInfo.bVisible = false; // set the cursor visibility
+        SetConsoleCursorInfo(hOut, &cursorInfo);
+
+        COORD consoleSize;
+        SMALL_RECT rect;
+        rect.Top = 0;
+        rect.Left = 0;
+        rect.Bottom = 19;
+        rect.Right = 35;
+        consoleSize.X = 50;
+        consoleSize.Y = 50;
+        // SetConsoleScreenBufferSize(hOut, consoleSize);
+        SetConsoleWindowInfo(hOut, 1, &rect);
+    }
+
     char choice;
     bool exit;
     do
@@ -114,7 +147,7 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
         else
             drawTile(j);
     }
-    drawTile(TOP_RIGHT_CORNER);
+    drawTile(TOP_T);
     endLine();
 
     // display battlefield
@@ -141,12 +174,12 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
         }
 
         drawTile(VERTICAL_BORDER);
-        if (i+1 >= 9)
+        if (i + 1 >= 9)
             endLine(0);
         else
             endLine();
     }
-    //to account for endline with no offset in the previous lines
+    // to account for endline with no offset in the previous lines
     drawTile(' ');
     drawTile(LEFT_T);
     for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
@@ -156,7 +189,7 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
         else
             drawTile(HORIZONTAL_BORDER);
     }
-    drawTile(RIGHT_T);
+    drawTile(CROSS);
     endLine();
 
     // display empty message box
@@ -177,7 +210,7 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
     for (int i = 0; i < 5; i++)
         for (int j = 0; j < Logic::totalBoardSize + 3; j++)
             std::cout << ' ';
-
+    opponentShipStatus();
     setCursorPosition(2, Logic::battlefieldSize + 2);
 }
 
@@ -187,7 +220,7 @@ void GameScreen::clearScreen()
 
     // Get the Win32 handle representing standard output.
     // This generally only has to be done once, so we make it static.
-    static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     COORD topLeft = {0, 0};
@@ -221,14 +254,16 @@ void GameScreen::clearScreen()
 
 void GameScreen::setConsoleColour(unsigned short colour)
 {
-    static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    //also from Stackoverflow
+    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     std::cout.flush();
     SetConsoleTextAttribute(hOut, colour);
 }
 
 void GameScreen::setCursorPosition(int x, int y)
 {
-    static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    //also from stackoverflow
+    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     std::cout.flush();
     COORD coord = {(SHORT)x, (SHORT)y};
     SetConsoleCursorPosition(hOut, coord);
@@ -296,9 +331,53 @@ void GameScreen::drawTile(const int tileType, bool drawCursor)
     }
 }
 
+COORD GameScreen::currentConsoleCursorPosition()
+{
+    //taken from Stackoverflow and slightly modified
+    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(hOut, &csbi);
+    return csbi.dwCursorPosition;
+}
+
 void GameScreen::endLine(int offset)
 {
     std::cout << std::endl;
-    while (offset--)
-        std::cout << ' ';
+    setCursorPosition(offset, currentConsoleCursorPosition().Y);
+}
+
+void GameScreen::opponentShipStatus()
+{
+    //drawing initial, empty box for the ship indicators to go into
+    const int offset = Logic::battlefieldSize * 2 + 4;
+    setCursorPosition(offset, 0);
+    for (int i = 0; i < 11; i++)
+        drawTile(HORIZONTAL_BORDER);
+    drawTile(TOP_RIGHT_CORNER);
+    endLine(offset);
+    std::cout << "   SHIPS   ";
+    drawTile(VERTICAL_BORDER);
+    endLine(offset);
+    std::cout << " DESTROYED ";
+    drawTile(VERTICAL_BORDER);
+    endLine(offset);
+    for (int i = 0; i < Logic::battlefieldSize - 2; i++)
+    {
+        for (int j = 0; j < 11; j++)
+        {
+            drawTile(' ');
+        }
+        drawTile(VERTICAL_BORDER);
+        endLine(offset);
+    }
+    for(int i = 0; i < 11; i++)
+        drawTile(HORIZONTAL_BORDER);
+    drawTile(BOTTOM_RIGHT_CORNER);
+    
+    //drawing the ship indicators
+    int shipOffset = offset;
+    for(auto const &ship : Logic::Players.at(Logic::currentIdlingPlayerId)->playerShips)
+    {
+        for(int i = 0; i < ship->mShipLength)
+    }
 }

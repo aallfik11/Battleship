@@ -61,6 +61,7 @@ public:
     static bool checkHit(int targetTileId);
     static bool checkOutOfBounds(unsigned int mapTileId, char direction);
     friend class CPU;
+    friend class GameScreen;
 
     class BadRow : public std::exception
     {

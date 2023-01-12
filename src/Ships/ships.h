@@ -39,6 +39,7 @@ public:
     friend class Logic;
     friend class Player;
     friend class CPU;
+    friend class GameScreen;
 };
 
 // class Carrier : Ship
