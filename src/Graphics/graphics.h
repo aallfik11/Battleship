@@ -40,7 +40,8 @@ public:
     static void setCursorPosition(int x, int y);
     static void setConsoleColour(unsigned short colour);
     static void displayMessage(const char* message, unsigned short colour);
-    static void drawTile(int tileType, bool drawCrosshair);
+    static void drawTile(int tileType, bool drawCursor = false);
+    static void endLine(int offset = 1);
 };
 
 #endif /*GRAPHICS_H*/

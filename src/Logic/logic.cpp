@@ -41,6 +41,7 @@ ShipTile::ShipTile()
 }
 
 int Logic::battlefieldSize = 10;
+int Logic::totalBoardSize = 100;
 bool Logic::CPUShipDestroyed = false;
 bool Logic::gameOver = false;
 std::array<Player *, 2> Logic::Players = {NULL, NULL};
@@ -114,13 +115,11 @@ void Logic::gameLoop(bool playerVsAi)
     Player *Player2;
     if (playerVsAi)
     {
-        CPU cpu;
-        Player2 = &cpu;
+        Player2 = new CPU;
     }
     else
     {
-        Player P2;
-        Player2 = &P2;
+        Player2 = new Player;
     }
     Player1.mPlayerId = 0;
     Player2->mPlayerId = 1;
@@ -128,6 +127,7 @@ void Logic::gameLoop(bool playerVsAi)
     Players[1] = Player2;
     Player1.placeShips();
     Player2->placeShips();
+    GameScreen::clearScreen();
     gameOver = false;
     while (!gameOver)
     {
@@ -142,6 +142,7 @@ void Logic::gameLoop(bool playerVsAi)
             Player2->attack();
         }
     }
+    delete Player2;
 }
 
 bool Logic::checkHit(int targetTileId)
@@ -218,10 +219,11 @@ Player::Player()
 
     // for (auto ship : playerShips)
     //     ship = new Ship;
-    const std::size_t totalBoardSize = Logic::battlefieldSize*Logic::battlefieldSize;
-    playerBoard.reserve(totalBoardSize);
-    opponentBoard.reserve(totalBoardSize);
+    playerBoard = std::vector<MapTile>(Logic::totalBoardSize);
+    opponentBoard = std::vector<MapTile>(Logic::totalBoardSize);
 
+    // for (auto &ship : playerShips)
+    //     ship = new Ship;
     this->playerShips[0] = new Ship;
     this->playerShips[1] = new Ship;
     this->playerShips[2] = new Ship;
@@ -233,10 +235,11 @@ Player::Player()
     this->playerShips[2]->setLength(3);
     this->playerShips[3]->setLength(3);
     this->playerShips[4]->setLength(2);
-    for (int i = 0; i < (Logic::battlefieldSize * Logic::battlefieldSize); i++)
+
+    for (int i = 0; i < Logic::totalBoardSize; i++)
     {
-        playerBoard[i].tileId = i;
-        opponentBoard[i].tileId = i;
+        playerBoard.at(i).tileId = i;
+        opponentBoard.at(i).tileId = i;
     }
 }
 
@@ -362,7 +365,6 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                 char input2;
                 std::cin >> rowInput;
 
-
                 // new system that would work with backspace, work on that later
                 // do
                 // {
@@ -427,6 +429,8 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                   << "Submarine - Size 3 - Input 'S' or 's'\n"
                   << "Patrol Boat - Size 2 - Input 'P' or 'p'\n";
         input = getch();
+        if (input == 0 || input == -32 || input == 224)
+            getch();
         input = tolower(input);
         switch (input)
         {
@@ -471,22 +475,22 @@ void Player::placeShips()
 {
     // std::array<MapTile, 100> tempBoard = playerBoard;
     // std::array<Ship, 5> tempShipArray = playerShips;
+
     bool allPlaced = false;
     while (!allPlaced)
     {
         int allPlacedCheck = 0;
+
+        GameScreen::drawShipsEditor(this);
+        controls(mEditorModeCurrentSelectedShip);
+
         for (auto ship : playerShips)
             if (!ship->mIsDestroyed)
                 allPlacedCheck++;
         if (allPlacedCheck == 5)
-        {
             allPlaced = true;
-            break;
-        }
-
-        GameScreen::drawShipsEditor(this);
-        controls(mEditorModeCurrentSelectedShip);
     }
+    std::cout << this;
     for (auto ship : playerShips)
     {
         for (auto hullTile : ship->mHull)

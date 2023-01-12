@@ -55,6 +55,7 @@ public:
     static bool gameOver;
     static bool CPUShipDestroyed;
     static int battlefieldSize;
+    static int totalBoardSize;
     static void gameLoop(bool playerVsAi);
     static char checkShipPlacement(const int mapTileId, const char direction, const int shipLength, const std::array<Ship*, 5> &ships);
     static bool checkHit(int targetTileId);

@@ -13,7 +13,7 @@ CPU::CPU()
     std::random_device device;
     mRng = std::mt19937(device());
     // mRng.seed(200);
-    mGuessTargetLocation = std::uniform_int_distribution<unsigned int>(0, ((Logic::battlefieldSize * Logic::battlefieldSize) - 1));
+    mGuessTargetLocation = std::uniform_int_distribution<unsigned int>(0, Logic::totalBoardSize - 1);
     mGuessTargetRotation = std::uniform_int_distribution<unsigned int>(0, 3);
     mWillCPUCheat = std::uniform_int_distribution<unsigned int>(0, mDifficulty);
     mCheaterTakeRandomShip = std::uniform_int_distribution<unsigned int>(0, 4);
@@ -22,6 +22,11 @@ CPU::CPU()
     this->mTargetsHit = 0;
     this->mShipCount = 0;
 
+    playerBoard = std::vector<MapTile>(Logic::totalBoardSize);
+    opponentBoard = std::vector<MapTile>(Logic::totalBoardSize);
+
+    // for(auto &ship : playerShips)
+    //     ship = new Ship;
     this->playerShips[0] = new Ship;
     this->playerShips[1] = new Ship;
     this->playerShips[2] = new Ship;
@@ -33,10 +38,11 @@ CPU::CPU()
     this->playerShips[2]->setLength(3);
     this->playerShips[3]->setLength(3);
     this->playerShips[4]->setLength(2);
-    for (int i = 0; i < (Logic::battlefieldSize * Logic::battlefieldSize); i++)
+
+    for (int i = 0; i < Logic::totalBoardSize; i++)
     {
-        playerBoard[i].tileId = i;
-        opponentBoard[i].tileId = i;
+        playerBoard.at(i).tileId = i;
+        opponentBoard.at(i).tileId = i;
     }
     for (auto &direction : mDirectionsTried)
         direction = false;
@@ -127,7 +133,7 @@ void CPU::attack()
                     mTargetsHit++;
                     mShotLanded = false;
                     // if (!mIsTargetDestroyed)
-                        mLastHitTileRotation = mGuessTargetRotation(mRng);
+                    mLastHitTileRotation = mGuessTargetRotation(mRng);
                     mDirectionsTried.at(mLastHitTileRotation) = true;
                     // std::cout << "\nDEBUG: HIT RANDOMLY";
                 }
@@ -192,31 +198,9 @@ char CPU::mShootInLine(int lastHitId, char currentDirection)
         theoreticalShot = mLastHitTileId - Logic::battlefieldSize;
         if (Logic::checkOutOfBounds(theoreticalShot, mLastHitTileRotation))
         {
-            // mDirectionsTried.at(0) = true;
-            // if (mDirectionsTried.at(2) == false)
-            // {
-            //     mLastHitTileRotation = 2;
-            //     mDirectionsTried.at(2) = true;
-            // }
-            // // ugly, I currently don't know how to approach it better, though
-            // else if (mDirectionsTried.at(1) == false)
-            // {
-            //     mLastHitTileRotation = 1;
-            //     mDirectionsTried.at(1) = true;
-            // }
-            // else
-            // {
-            //     mLastHitTileRotation = 3;
-            //     mDirectionsTried.at(3) = true;
-            // }
-            // { //if cpu gets stuck try uncommenting
-            //     mLastHitTileRotation = 4;
-            //     mIsTargetDestroyed = true;
-            // }
             mDirectionSetup();
             mLastHitTileId = mInitialTileHitId;
             mShotLanded = true;
-            return mLastHitTileRotation;
         }
         else
         { // theoreticalShot = mLastHitTileId - Logic::battlefieldSize;
