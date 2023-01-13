@@ -211,6 +211,7 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
         for (int j = 0; j < Logic::totalBoardSize + 3; j++)
             std::cout << ' ';
     opponentShipStatus();
+    setConsoleColour(CONSOLE_DEFAULT_COLOURS);
     setCursorPosition(2, Logic::battlefieldSize + 2);
 }
 
@@ -254,16 +255,16 @@ void GameScreen::clearScreen()
 
 void GameScreen::setConsoleColour(unsigned short colour)
 {
-    //also from Stackoverflow
-    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    // also from Stackoverflow
+    //  static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     std::cout.flush();
     SetConsoleTextAttribute(hOut, colour);
 }
 
 void GameScreen::setCursorPosition(int x, int y)
 {
-    //also from stackoverflow
-    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    // also from stackoverflow
+    //  static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     std::cout.flush();
     COORD coord = {(SHORT)x, (SHORT)y};
     SetConsoleCursorPosition(hOut, coord);
@@ -333,8 +334,8 @@ void GameScreen::drawTile(const int tileType, bool drawCursor)
 
 COORD GameScreen::currentConsoleCursorPosition()
 {
-    //taken from Stackoverflow and slightly modified
-    // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    // taken from Stackoverflow and slightly modified
+    //  static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(hOut, &csbi);
     return csbi.dwCursorPosition;
@@ -348,7 +349,7 @@ void GameScreen::endLine(int offset)
 
 void GameScreen::opponentShipStatus()
 {
-    //drawing initial, empty box for the ship indicators to go into
+    // drawing initial, empty box for the ship indicators to go into
     const int offset = Logic::battlefieldSize * 2 + 4;
     setCursorPosition(offset, 0);
     for (int i = 0; i < 11; i++)
@@ -370,14 +371,22 @@ void GameScreen::opponentShipStatus()
         drawTile(VERTICAL_BORDER);
         endLine(offset);
     }
-    for(int i = 0; i < 11; i++)
+    for (int i = 0; i < 11; i++)
         drawTile(HORIZONTAL_BORDER);
     drawTile(BOTTOM_RIGHT_CORNER);
-    
-    //drawing the ship indicators
-    int shipOffset = offset;
-    for(auto const &ship : Logic::Players.at(Logic::currentIdlingPlayerId)->playerShips)
+
+    // drawing the ship indicators
+    int shipOffset = offset + 1;
+    for (auto const &ship : Logic::Players.at(Logic::currentIdlingPlayerId)->playerShips)
     {
-        for(int i = 0; i < ship->mShipLength)
+        setCursorPosition(shipOffset, 4);
+        short tile;
+        (ship->mIsDestroyed == true) ? tile = TILE_TYPE_SHIP_HIT : tile = TILE_TYPE_SHIP;
+        for (int i = 0; i < ship->mShipLength; i++)
+        {
+            drawTile(tile);
+            endLine(shipOffset);
+        };
+        shipOffset += 2;
     }
 }
