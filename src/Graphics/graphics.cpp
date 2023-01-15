@@ -37,6 +37,7 @@ static const char WEST = 3;
 static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
 bool MainMenu::mCpu = true;
+MainMenu::difficulty MainMenu::currentDifficulty = MainMenu::difficulty::normal;
 
 void MainMenu::drawMenu()
 {
@@ -74,10 +75,9 @@ void MainMenu::drawMenu()
 
     char choice;
     bool exit;
-    GameScreen::clearScreen();
     do
     {
-        GameScreen::setCursorPosition(0,0);
+        GameScreen::clearScreen();
         std::cout << "Battleship\n\n"
                   << "1. Start\n"
                   << "2. Settings\n"
@@ -104,7 +104,63 @@ void MainMenu::startGame(bool playerVsAi)
     Logic::gameLoop(playerVsAi);
 }
 
-void MainMenu::drawSettings() {}
+void MainMenu::drawSettings()
+{
+    char choice;
+    bool back = false;
+    while (!back)
+    {
+        GameScreen::clearScreen();
+        std::cout << "Settings" << std::endl;
+        std::cout << "1. Play with CPU: ";
+        if (mCpu == true)
+        {
+            std::cout << "True" << std::endl;
+            std::cout << "2. Difficulty: ";
+            switch (currentDifficulty)
+            {
+            case difficulty::normal:
+                std::cout << "Normal" << std::endl;
+                break;
+            case difficulty::hard:
+                std::cout << "Hard" << std::endl;
+                break;
+            case difficulty::impossible:
+                std::cout << "Impossible" << std::endl;
+                break;
+            }
+        }
+        else
+            std::cout << "False" << std::endl;
+        std::cout << "0. Back to Main Menu";
+        switch (choice = getch())
+        {
+        case '1':
+            if (mCpu == true)
+                mCpu = false;
+            else
+                mCpu = true;
+            break;
+        case '2':
+            switch (currentDifficulty)
+            {
+            case difficulty::normal:
+                currentDifficulty = difficulty::hard;
+                break;
+            case difficulty::hard:
+                currentDifficulty = difficulty::impossible;
+                break;
+            case difficulty::impossible:
+                currentDifficulty = difficulty::normal;
+                break;
+            }
+            break;
+        case '0':
+            back = true;
+            break;
+        }
+    }
+}
 
 int GameScreen::messageCursorPositionX = 2;
 int GameScreen::messageCursorPositionY = Logic::battlefieldSize + 3;

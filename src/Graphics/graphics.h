@@ -14,18 +14,20 @@ void setConsoleColour(unsigned short colour);
 
 class MainMenu
 {
+    enum class difficulty
+    {
+        normal,
+        hard,
+        impossible
+    };
     static bool mCpu;
-    // enum class difficulty
-    // {
-    //     easy,
-    //     medium,
-    //     hard
-    // };
+    static difficulty currentDifficulty;
 
 public:
     static void startGame(bool playerVsAi);
     static void drawMenu();
     static void drawSettings();
+    friend class Logic;
 };
 
 class GameScreen
@@ -33,6 +35,7 @@ class GameScreen
     static bool mMessageBoxNeedsCleaning;
     static int mLastMessageBoxLength;
     static int mLastMessageBoxHeight;
+
 public:
     static int messageCursorPositionX;
     static int messageCursorPositionY;

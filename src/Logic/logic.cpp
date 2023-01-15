@@ -14,30 +14,19 @@ static const char KEY_BACKSPACE = 8;
 static const char KEY_ROTATE_LEFT = 93;
 static const char KEY_ROTATE_RIGHT = 91;
 
-Coordinates::Coordinates(const Coordinates &xy)
-{
-    this->x = xy.x;
-    this->y = xy.y;
-}
-
-Coordinates::Coordinates()
-{
-    this->x = 0;
-    this->y = 0;
-}
-
 MapTile::MapTile()
 {
     this->tileId = 0;
     this->tileType = 0;
+    this->direction = 0;
 }
 
 ShipTile::ShipTile()
 {
     this->tileId = 0;
-    // this->TileId = 999;
     this->mDestroyed = false;
     this->tileType = 1;
+    this->mDirection = 0;
 }
 
 int Logic::battlefieldSize = 10;
@@ -46,6 +35,7 @@ bool Logic::shipDestroyed = false;
 bool Logic::gameOver = false;
 std::array<Player *, 2> Logic::Players = {NULL, NULL};
 int Logic::currentIdlingPlayerId = 1;
+int Logic::difficulty = 0;
 
 char Logic::checkShipPlacement(const int mapTileId, const char direction, const int shipLength, const std::array<Ship *, 5> &ships)
 {
@@ -115,7 +105,20 @@ void Logic::gameLoop(bool playerVsAi)
     Player *Player2;
     if (playerVsAi)
     {
-        Player2 = new CPU;
+        int difficulty;
+        switch (MainMenu::currentDifficulty)
+        {
+        case MainMenu::difficulty::normal:
+            difficulty = 1000;
+            break;
+        case MainMenu::difficulty::hard:
+            difficulty = 4;
+            break;
+        case MainMenu::difficulty::impossible:
+            difficulty = 0;
+            break;
+        }
+        Player2 = new CPU(difficulty);
     }
     else
     {
@@ -143,7 +146,11 @@ void Logic::gameLoop(bool playerVsAi)
             GameScreen::opponentShipStatus();
             currentIdlingPlayerId = 0;
             Player2->attack();
+            if (gameOver)
+                Player2->winner();
         }
+        else
+            Player1.winner();
     }
     delete Player2;
 }
@@ -316,7 +323,6 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                 else
                     try
                     {
-                        // char exceptionid = Logic::checkShipPlacement(mCursorTileID, ship->mDirection, ship->mShipLength, playerShips);
                         if (Logic::checkShipPlacement(mCursorTileID, ship->mDirection, ship->mShipLength, playerShips))
                             throw Logic::BadShipPlacement();
 
@@ -399,24 +405,11 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
             catch (const std::exception &e)
             {
 
-                // switch (e)
-                // {
-                // case 1:
-                //     std::cerr << "Invalid Row Selection" << '\n';
-                //     break;
-                // case 2:
-                //     std::cerr << "Invalid Column Selection" << '\n';
-                //     break;
-                // case 3:
-                //     std::cerr << "Invalid Row and Column Selection" << '\n';
-                //     break;
-                // }
-                std::cerr << e.what() << '\n'
+                std::cout << e.what() << '\n'
                           << "Press Any Key to Try Again...";
                 input = getch();
                 if (input == 0 || input == -32 || input == 224)
                     getch();
-                // kbhit();
             }
             return 0;
         }
@@ -425,13 +418,6 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
     {
         char *message = "Select Ship Type:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\n";
         GameScreen::messageManager(message);
-        //     std::cout
-        // << "Select Ship Type:\n" // try adding colors to guide the player. Green - unplaced, red - placed
-        // << "Carrier - Size 5 - Input 'C' or 'c'\n"
-        // << "Battleship - Size 4 - Input 'B' or 'b'\n"
-        // << "Destroyer - Size 3 - Input 'D' or 'd'\n"
-        // << "Submarine - Size 3 - Input 'S' or 's'\n"
-        // << "Patrol Boat - Size 2 - Input 'P' or 'p'\n";
         input = getch();
         if (input == 0 || input == -32 || input == 224)
             getch();
@@ -461,17 +447,8 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
             break;
         default:
         {
-            char* message = "Invalid Ship Type Selected\n Ship Types Available:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\nPress Any Key To Try Selecting a Ship Again...";
-            // std::cout << "Invalid Ship Type Selected\n Ship Types Available:\n"
-            //           << "Carrier - Size 5 - Input 'C' or 'c'\n"
-            //           << "Battleship - Size 4 - Input 'B' or 'b'\n"
-            //           << "Destroyer - Size 3 - Input 'D' or 'd'\n"
-            //           << "Submarine - Size 3 - Input 'S' or 's'\n"
-            //           << "Patrol Boat - Size 2 - Input 'P' or 'p'\n"
-            //           << "Press Any Key To Try Selecting a Ship Again...";
-            // input = getch();
-            // if (input == 0 || input == -32 || input == 224)
-            //     getch();
+            GameScreen::drawShipsEditor(this);
+            char *message = "Invalid Ship Type Selected\n Ship Types Available:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\nPress Any Key To Try Selecting a Ship Again...";
             GameScreen::messageManager(message, true);
         }
             return 0;
@@ -544,6 +521,15 @@ void Player::attack()
         else
             shotLanded = true;
     } while (shotLanded);
+}
+
+void Player::winner()
+{
+    GameScreen::clearScreen();
+    std::cout << "Player " << mPlayerId + 1 << " Wins!";
+    int temp = getch();
+    if (temp == 0 || temp == -32 || temp == 224)
+        getch();
 }
 
 /*         N

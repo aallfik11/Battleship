@@ -7,16 +7,6 @@
 
 
 class Ship;
-
-class Coordinates
-{
-public:
-    int x;
-    int y;
-    Coordinates();
-    Coordinates(const Coordinates &xy);
-};
-
 class MapTile
 {
 public:
@@ -37,11 +27,6 @@ public:
     friend class Logic;
     friend class CPU;
     ShipTile();
-    // friend class Carrier;
-    // friend class Battleship;
-    // friend class Destroyer;
-    // friend class Submarine;
-    // friend class PatrolBoat;
 };
 
 class Player;
@@ -51,6 +36,7 @@ class Logic
     static std::array<Player *, 2> Players;
 
 public:
+    static int difficulty;
     static int currentIdlingPlayerId;
     static bool gameOver;
     static bool shipDestroyed;
@@ -115,6 +101,7 @@ public:
     char controls(Ship *ship, bool attacking);
     virtual void placeShips();
     virtual void attack();
+    virtual void winner();
     friend class GameScreen;
     friend class Logic;
     friend class Ship;

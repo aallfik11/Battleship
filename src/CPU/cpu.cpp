@@ -1,11 +1,11 @@
 #include "cpu.h"
 #include <random>
+#include <conio.h>
 #include "../Ships/ships.h"
 #include "../Graphics/graphics.h"
 
-CPU::CPU()
+CPU::CPU(int difficulty) : mDifficulty(difficulty)
 {
-    mDifficulty = 100;
     mInitialTileHitId = -1;
     mLastHitTileId = -1;      // if -1 implies that no tile has been hit/last hit tile is the last one of the ship CPU was trying to destroy
     mLastHitTileRotation = 4; // if over 3 -||-
@@ -45,8 +45,6 @@ CPU::CPU()
         direction = false;
 }
 
-
-
 void CPU::placeShips()
 {
     for (auto ship : playerShips)
@@ -83,7 +81,7 @@ void CPU::attack()
         {
             // if there is no ship that the CPU is currently shooting at, it will attempt to cheat by seeing one of the players ships. The chance for the CPU cheating is dependent on the difficulty
             if (!mWillCPUCheat(mRng) && mIsTargetDestroyed)
-            { 
+            {
                 // rolls until it finds a nondestroyed ship to hit
                 int randomShip = mCheaterTakeRandomShip(mRng);
                 while (Logic::Players.at(0)->playerShips.at(randomShip)->mIsDestroyed)
@@ -145,7 +143,7 @@ void CPU::attack()
     } while (mShotLanded && !Logic::gameOver);
 }
 
-char CPU::mShootInLine(int lastHitId, char currentDirection)
+void CPU::mShootInLine(int lastHitId, char currentDirection)
 {
     unsigned int theoreticalShot;
     switch (currentDirection)
@@ -229,7 +227,7 @@ char CPU::mShootInLine(int lastHitId, char currentDirection)
     }
 }
 
-bool CPU::mCheckShotVailidity(unsigned int theoreticalShot)
+void CPU::mCheckShotVailidity(unsigned int theoreticalShot)
 {
     if (!Logic::checkOutOfBounds(theoreticalShot, mLastHitTileRotation) && opponentBoard.at(theoreticalShot).tileType != 3)
     {
@@ -338,4 +336,13 @@ void CPU::mResetDirectionsTried()
 {
     for (auto &direction : mDirectionsTried)
         direction = false;
+}
+
+void CPU::winner()
+{
+    GameScreen::clearScreen();
+    std::cout << "CPU Wins!";
+    int temp = getch();
+    if (temp == 0 || temp == -32 || temp == 224)
+        getch();
 }

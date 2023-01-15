@@ -23,14 +23,15 @@ class CPU : public Player
     std::array<bool, 4> mDirectionsTried;
     void mResetDirectionsTried();
     char mDetermineTargetOrientation();
-    bool mCheckShotVailidity(unsigned int theoreticalShot);
-    char mShootInLine(int lastHitId, char currentDirection);
+    void mCheckShotVailidity(unsigned int theoreticalShot);
+    void mShootInLine(int lastHitId, char currentDirection);
     void mDirectionSetup();
 
 public:
-    CPU();
+    CPU(int difficulty);
     void placeShips();
     void attack();
+    void winner();
 };
 
 #endif
