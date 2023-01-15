@@ -74,11 +74,23 @@ void MainMenu::drawMenu()
     }
 
     char choice;
-    bool exit;
+    bool exit = false;
     do
     {
         GameScreen::clearScreen();
-        std::cout << "Battleship\n\n"
+
+        std::cout << R"(
+______       _   _   _           _     _       
+| ___ \     | | | | | |         | |   (_)      
+| |_/ / __ _| |_| |_| | ___  ___| |__  _ _ __  
+| ___ \/ _` | __| __| |/ _ \/ __| '_ \| | '_ \ 
+| |_/ / (_| | |_| |_| |  __/\__ \ | | | | |_) |
+\____/ \__,_|\__|\__|_|\___||___/_| |_|_| .__/ 
+                                        | |    
+                                        |_|    
+)";
+        std::cout << std::endl
+                  << std::endl
                   << "1. Start\n"
                   << "2. Settings\n"
                   << "0. Exit" << std::endl;
