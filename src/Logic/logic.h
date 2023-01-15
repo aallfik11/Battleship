@@ -53,7 +53,7 @@ class Logic
 public:
     static int currentIdlingPlayerId;
     static bool gameOver;
-    static bool CPUShipDestroyed;
+    static bool shipDestroyed;
     static int battlefieldSize;
     static int totalBoardSize;
     static void gameLoop(bool playerVsAi);

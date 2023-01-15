@@ -122,9 +122,4 @@ void Ship::deleteHull()
 void Ship::shipDestroyed()
 {
     mIsDestroyed = true;
-    if (!Logic::CPUShipDestroyed)
-    {
-        std::cout << "You Have Destroyed a Ship. Press Enter to Continue...";
-        getchar();
-    }
 }

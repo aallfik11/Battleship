@@ -109,7 +109,7 @@ void CPU::attack()
                 mInitialTileHitId = Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId;
                 opponentBoard.at(Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId).tileType = 2;
                 // Logic::checkHit(0, Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId);
-                mIsTargetDestroyed = Logic::CPUShipDestroyed;
+                mIsTargetDestroyed = Logic::shipDestroyed;
                 mTargetsHit++;
                 mLastHitTileRotation = Logic::Players.at(0)->playerShips.at(randomShip)->mDirection;
                 mDirectionsTried.at(mLastHitTileRotation) = true;
@@ -126,7 +126,7 @@ void CPU::attack()
                     testHit = mGuessTargetLocation(mRng);
                 if (Logic::checkHit(testHit))
                 {
-                    mIsTargetDestroyed = Logic::CPUShipDestroyed;
+                    mIsTargetDestroyed = Logic::shipDestroyed;
                     mInitialTileHitId = testHit;
                     mLastHitTileId = mInitialTileHitId;
                     opponentBoard.at(testHit).tileType = 2;
@@ -280,7 +280,7 @@ bool CPU::mCheckShotVailidity(unsigned int theoreticalShot)
         if (Logic::checkHit(theoreticalShot))
         {
             mShotLanded = true;
-            if (Logic::CPUShipDestroyed)
+            if (Logic::shipDestroyed)
             {
                 // std::cout << "DEBUG: PLAYER SHIP DESTROYED, ROLLING NEW TARGET" << std::endl;
                 mIsTargetDestroyed = true;

@@ -42,7 +42,7 @@ ShipTile::ShipTile()
 
 int Logic::battlefieldSize = 10;
 int Logic::totalBoardSize = 100;
-bool Logic::CPUShipDestroyed = false;
+bool Logic::shipDestroyed = false;
 bool Logic::gameOver = false;
 std::array<Player *, 2> Logic::Players = {NULL, NULL};
 int Logic::currentIdlingPlayerId = 1;
@@ -132,11 +132,18 @@ void Logic::gameLoop(bool playerVsAi)
     while (!gameOver)
     {
         currentIdlingPlayerId = 1;
+        /*
+        if this is not done the ship status won't display until the player actually would have destroyed a ship
+        also, it would mean that player 1 would see player 2's ship status until they destroy something to update it again
+        */
+        GameScreen::opponentShipStatus();
         Player1.attack();
+
         // std::cout << "\nDEBUG: before check, player attack function quit with no issue";
         // std::cout << "\nDEBUG: gameOver status:" << gameOver;
         if (!gameOver)
         {
+            GameScreen::opponentShipStatus();
             currentIdlingPlayerId = 0;
             // std::cout << "\nDEBUG: BEFORE CPU ATTACKS";
             Player2->attack();
@@ -147,7 +154,7 @@ void Logic::gameLoop(bool playerVsAi)
 
 bool Logic::checkHit(int targetTileId)
 {
-    CPUShipDestroyed = false;
+    shipDestroyed = false;
     Player *opponent;
     Ship *maybeDestroyedShip;
     opponent = Players.at(currentIdlingPlayerId);
@@ -169,7 +176,7 @@ bool Logic::checkHit(int targetTileId)
 
         if (maybeDestroyedShip->healthPoints == 0)
         {
-            CPUShipDestroyed = true;
+            shipDestroyed = true;
             maybeDestroyedShip->shipDestroyed();
         }
         return true;
@@ -511,8 +518,6 @@ void Player::attack()
         // check if player has confirmed their shot coordinates
         if (controls(NULL, true) == KEY_ENTER)
         {
-            std::cout << "enter pressed";
-            // getchar();
             // check if target coordinates are eligible for shooting, in case it's a tile that has already been shot at, the player is prevented from choosing that tile
             if (opponentBoard.at(mCursorTileID).tileType == 2 || opponentBoard.at(mCursorTileID).tileType == 3)
             {
@@ -522,10 +527,11 @@ void Player::attack()
                 continue;
             }
             // the player is allowed to attack as long as they are hitting enemy ships;
-            // shotLanded = Logic::checkHit(1, mCursorTileID);
             if (Logic::checkHit(mCursorTileID))
             {
                 shotLanded = true;
+                if (Logic::shipDestroyed == true)
+                    GameScreen::opponentShipStatus();
                 // std::cout << "DEBUG: SHOT LANDED" << std::endl;
                 opponentBoard.at(mCursorTileID).tileType = 2;
                 mTargetsHit++;

@@ -41,7 +41,7 @@ public:
     static void setCursorPosition(int x, int y);
     static void setConsoleColour(unsigned short colour);
     static void displayMessage(const char *message, unsigned short colour);
-    static void drawTile(int tileType, bool drawCursor = false);
+    static void drawTile(int tileType, int amount = 1, bool drawCursor = false);
     static COORD currentConsoleCursorPosition();
     static void endLine(int offset = 1);
     static void opponentShipStatus();

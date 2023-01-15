@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include <conio.h>
 #include <iostream>
+#include <vector>
 #include <windows.h>
 // #include "cpu.h"
 
@@ -16,6 +17,7 @@ static const char LEFT_T = 204;
 static const char RIGHT_T = 185;
 static const char CROSS = 206;
 static const char WATER_HIT = 176;
+static const char WHITESPACE = 32;
 static const short TILE_TYPE_WATER = 0;
 static const short TILE_TYPE_SHIP = 1;
 static const short TILE_TYPE_SHIP_HIT = 2;
@@ -24,10 +26,14 @@ static const unsigned short CONSOLE_DEFAULT_COLOURS = 7;
 static const unsigned short CONSOLE_NO_COLOURS = 0;
 static const unsigned short COLOUR_WATER = 147;
 static const unsigned short COLOUR_WATER_CURSOR = 154;
-static const unsigned short COLOUR_SHIP = 136;
+static const unsigned short COLOUR_SHIP = 138;
 static const unsigned short COLOUR_SHIP_HIT = 76;
 static const unsigned short COLOUR_WATER_HIT = 159;
 static const unsigned short COLOUR_WATER_HIT_CURSOR = 156;
+static const char NORTH = 0;
+static const char SOUTH = 2;
+static const char EAST = 1;
+static const char WEST = 3;
 static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
 bool MainMenu::mCpu = true;
@@ -59,7 +65,7 @@ void MainMenu::drawMenu()
         rect.Top = 0;
         rect.Left = 0;
         rect.Bottom = 19;
-        rect.Right = 35;
+        rect.Right = 40;
         consoleSize.X = 50;
         consoleSize.Y = 50;
         // SetConsoleScreenBufferSize(hOut, consoleSize);
@@ -102,35 +108,218 @@ int GameScreen::messageCursorPositionY = Logic::battlefieldSize + 2;
 
 void GameScreen::drawShipsEditor(Player *currentPlayer)
 {
-    // int battlefieldSize = Logic::battlefieldSize;
+    setCursorPosition(1, 0);
 
-    // // top frame of the battlefield
-    // std::cout << TOP_LEFT_CORNER;
-    // for (int i = 0; i < battlefieldSize; i++)
-    //     std::cout << HORIZONTAL_BORDER;
-    // std::cout << TOP_RIGHT_CORNER;
+    drawTile(TOP_LEFT_CORNER);
+    for (int i = 0, j = 'A'; i < Logic::battlefieldSize; i++, j++)
+    {
+        drawTile(j);
+    }
+    drawTile(TOP_RIGHT_CORNER);
+    endLine();
+
+    int tileType;
+    int tileId;
+    int cursorPos = currentPlayer->mCursorTileID;
+    for (int i = 0; i < Logic::battlefieldSize; i++)
+    { // player board
+        std::cout << i + 1;
+
+        for (int j = i * Logic::battlefieldSize; j < (i + 1) * Logic::battlefieldSize; j++)
+        {
+            tileType = currentPlayer->playerBoard.at(j).tileType;
+            tileId = currentPlayer->playerBoard.at(j).tileId;
+            // if (tileId == cursorPos)
+            // {
+            //     drawTile(tileType, 1, true);
+            // }
+            // else
+            drawTile(tileType);
+        }
+        drawTile(VERTICAL_BORDER);
+        if (i + 1 >= 9)
+            endLine(0);
+        else
+            endLine();
+    }
+
+    // size 17 because that's the total amount of tiles a set of ships has
+    std::vector<int> placedShipTiles;
+    placedShipTiles.reserve(17);
+    for (auto ship : currentPlayer->playerShips)
+        if (ship->mIsDestroyed == false) // ship is destroyed by default, meaning only placed ships will get added to the vector
+            for (auto shipTile : ship->mHull)
+                placedShipTiles.push_back(shipTile.tileId);
+
+    drawTile(WHITESPACE);
+    drawTile(LEFT_T);
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
+    drawTile(TOP_RIGHT_CORNER);
+    endLine();
+
+    // draw message box, might move this to displayMessage later
+    drawTile(VERTICAL_BORDER);
+    drawTile(WHITESPACE, Logic::battlefieldSize * 2 + 1);
+    drawTile(VERTICAL_BORDER);
+    endLine();
+    drawTile(BOTTOM_LEFT_CORNER);
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
+    drawTile(BOTTOM_RIGHT_CORNER);
+
+    for (int i = 0; i < 5; i++)
+    {
+        drawTile(WHITESPACE, Logic::battlefieldSize + 3);
+        endLine();
+    }
+
+    setConsoleColour(CONSOLE_DEFAULT_COLOURS);
+    
+    // draw all placed ships
+    for (auto shipTileId : placedShipTiles)
+    {
+        int cursorX = 2 + shipTileId % Logic::battlefieldSize;
+        int cursorY = 1 + shipTileId / Logic::battlefieldSize;
+        setCursorPosition(cursorX, cursorY);
+        drawTile(TILE_TYPE_SHIP);
+    }
+
+    setCursorPosition(2 + cursorPos % Logic::battlefieldSize, 1 + cursorPos / Logic::battlefieldSize);
+    // obviously, if there's no ship selected no members of a nullpointer should be accessed
+    if (currentPlayer->mEditorModeCurrentSelectedShip != NULL)
+    {
+        bool collission = false;
+        int theoreticalShipTileId = cursorPos;
+        int shipLength = currentPlayer->mEditorModeCurrentSelectedShip->mShipLength;
+        std::vector<int> theoreticalShipTiles(shipLength);
+        int cursorX = cursorPos % Logic::battlefieldSize;
+        int cursorY = cursorPos / Logic::battlefieldSize;
+        switch (currentPlayer->mEditorModeCurrentSelectedShip->mDirection)
+        {
+        case NORTH:
+            for (int i = 0; i < shipLength; i++)
+            {
+                for (auto shipTileId : placedShipTiles)
+                {
+                    if (theoreticalShipTileId == shipTileId)
+                    {
+                        collission = true;
+                        i = shipLength; // in order to stop the outer loop
+                        break;
+                    }
+                }
+                theoreticalShipTileId -= Logic::battlefieldSize;
+            }
+            // sets the color depending on the ship's placement inside the board
+            if (collission == true || (cursorY + 1) - shipLength < 0)
+                tileType = TILE_TYPE_SHIP_HIT; // using ship hit as it's just red
+            else
+                tileType = TILE_TYPE_SHIP;
+
+            for (int i = 0; i < shipLength; i++)
+            {
+                if (cursorY < 0)
+                    break;
+                drawTile(tileType, 1, true);
+                setCursorPosition(currentConsoleCursorPosition().X - 1, currentConsoleCursorPosition().Y - 1);
+                cursorY--;
+            }
+
+            break;
+        case SOUTH:
+            for (int i = 0; i < shipLength; i++)
+            {
+                for (auto shipTileId : placedShipTiles)
+                {
+                    if (theoreticalShipTileId == shipTileId)
+                    {
+                        collission = true;
+                        i = shipLength; // in order to stop the outer loop
+                        break;
+                    }
+                }
+                theoreticalShipTileId += Logic::battlefieldSize;
+            }
+            // sets the color depending on the ship's placement inside the board
+            if (collission == true || cursorY + shipLength > Logic::battlefieldSize)
+                tileType = TILE_TYPE_SHIP_HIT; // using ship hit as it's just red
+            else
+                tileType = TILE_TYPE_SHIP;
+
+            for (int i = 0; i < shipLength; i++)
+            {
+                if (cursorY >= Logic::battlefieldSize)
+                    break;
+                drawTile(tileType, 1, true);
+                endLine(cursorX + 2);
+                cursorY++;
+            }
+            break;
+        case EAST:
+            for (int i = 0; i < shipLength; i++)
+            {
+                for (auto shipTileId : placedShipTiles)
+                {
+                    if (theoreticalShipTileId == shipTileId)
+                    {
+                        collission = true;
+                        i = shipLength; // in order to stop the outer loop
+                        break;
+                    }
+                }
+                theoreticalShipTileId++;
+            }
+            // sets the color depending on the ship's placement inside the board
+            if (collission == true || cursorX + shipLength > Logic::battlefieldSize)
+                tileType = TILE_TYPE_SHIP_HIT; // using ship hit as it's just red
+            else
+                tileType = TILE_TYPE_SHIP;
+
+            for (int i = 0; i < shipLength; i++)
+            {
+                if (cursorX >= Logic::battlefieldSize)
+                    break;
+                drawTile(tileType, 1, true);
+                cursorX++;
+            }
+            break;
+        case WEST:
+            for (int i = 0; i < shipLength; i++)
+            {
+                for (auto shipTileId : placedShipTiles)
+                {
+                    if (theoreticalShipTileId == shipTileId)
+                    {
+                        collission = true;
+                        i = shipLength; // in order to stop the outer loop
+                        break;
+                    }
+                }
+                theoreticalShipTileId--;
+            }
+            // sets the color depending on the ship's placement inside the board
+            if (collission == true || (cursorX + 1) - shipLength < 0)
+                tileType = TILE_TYPE_SHIP_HIT; // using ship hit as it's just red
+            else
+                tileType = TILE_TYPE_SHIP;
+
+            for (int i = 0; i < shipLength; i++)
+            {
+                if (cursorX < 0)
+                    break;
+                drawTile(tileType, 1, true);
+                cursorX--;
+                setCursorPosition(cursorX + 2, cursorY + 1);
+            }
+            break;
+        }
+    }
+
+    setCursorPosition(2, Logic::battlefieldSize + 2);
 }
 
 void GameScreen::drawGameScreen(Player *currentPlayer)
-{ // debug only, later on will need to be made better
-    // clearScreen();
+{
     setCursorPosition(1, 0);
-    // system("cls");
-
-    // int temp = 0;
-    // for (int i = 0; i < Logic::battlefieldSize * Logic::battlefieldSize; i++)
-    // {
-    //     if (i == currentPlayer->mCursorTileID)
-    //         std::cout << 'X';
-    //     else
-    //         std::cout << (int)currentPlayer->opponentBoard.at(i).tileType;
-    //     if ((temp + 1) % 10 == 0)
-    //         std::cout << std::endl;
-    //     temp++;
-    // }
-    // std::cout << std::endl
-    //           << std::endl
-    //           << "current cursor ID: " << currentPlayer->mCursorTileID;
     int tileType;
     int tileId;
     int cursorPos = currentPlayer->mCursorTileID;
@@ -158,7 +347,6 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
         for (int j = i * Logic::battlefieldSize; j < (i + 1) * Logic::battlefieldSize; j++)
         {
             tileType = currentPlayer->playerBoard.at(j).tileType;
-            tileId = currentPlayer->playerBoard.at(j).tileId;
             drawTile(tileType);
         }
         drawTile(VERTICAL_BORDER);
@@ -168,7 +356,7 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
             tileType = currentPlayer->opponentBoard.at(j).tileType;
             tileId = currentPlayer->opponentBoard.at(j).tileId;
             if (tileId == cursorPos)
-                drawTile(tileType, true);
+                drawTile(tileType, 1, true);
             else
                 drawTile(tileType);
         }
@@ -180,37 +368,34 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
             endLine();
     }
     // to account for endline with no offset in the previous lines
-    drawTile(' ');
+    drawTile(WHITESPACE);
     drawTile(LEFT_T);
-    for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
-    {
-        if (i == Logic::battlefieldSize)
-            drawTile(BOTTOM_T);
-        else
-            drawTile(HORIZONTAL_BORDER);
-    }
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize);
+    drawTile(BOTTOM_T);
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize);
     drawTile(CROSS);
     endLine();
 
     // display empty message box
     drawTile(VERTICAL_BORDER);
-    for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
-        drawTile(' ');
+    // for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
+    //     drawTile(' ');
+    drawTile(WHITESPACE, Logic::battlefieldSize * 2 + 1);
     drawTile(VERTICAL_BORDER);
     endLine();
 
     drawTile(BOTTOM_LEFT_CORNER);
-    for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
-        drawTile(HORIZONTAL_BORDER);
 
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
     drawTile(BOTTOM_RIGHT_CORNER);
     endLine();
 
     // since I'm not using clearscreen, I need to fill any potential leftover message with whitespaces
     for (int i = 0; i < 5; i++)
-        for (int j = 0; j < Logic::totalBoardSize + 3; j++)
-            std::cout << ' ';
-    opponentShipStatus();
+    {
+        drawTile(WHITESPACE, Logic::battlefieldSize + 3);
+        endLine();
+    }
     setConsoleColour(CONSOLE_DEFAULT_COLOURS);
     setCursorPosition(2, Logic::battlefieldSize + 2);
 }
@@ -274,61 +459,70 @@ void GameScreen::displayMessage(const char *message, unsigned short colour)
 {
 }
 
-void GameScreen::drawTile(const int tileType, bool drawCursor)
+void GameScreen::drawTile(const int tileType, int amount, bool drawCursor)
 {
-    switch (tileType)
+    if (amount > 0)
     {
-    case TILE_TYPE_WATER:
-    {
-        if (drawCursor)
+        char tileToRender;
+        switch (tileType)
         {
-            setConsoleColour(COLOUR_WATER_CURSOR);
-            std::cout << CROSS;
-        }
-        else
+        case TILE_TYPE_WATER:
         {
-            setConsoleColour(COLOUR_WATER);
-            std::cout << '~';
+            if (drawCursor)
+            {
+                setConsoleColour(COLOUR_WATER_CURSOR);
+                tileToRender = CROSS;
+            }
+            else
+            {
+                setConsoleColour(COLOUR_WATER);
+                tileToRender = '~';
+            }
         }
-    }
-    break;
-    case TILE_TYPE_SHIP:
-    {
-        setConsoleColour(COLOUR_SHIP);
-        if (drawCursor == true)
-            std::cout << CROSS;
-        else
-            std::cout << ' ';
-    }
-    break;
-    case TILE_TYPE_SHIP_HIT:
-    {
-        setConsoleColour(COLOUR_SHIP_HIT);
-        if (drawCursor == true)
-            std::cout << CROSS;
-        else
-            std::cout << ' ';
-    }
-    break;
-    case TILE_TYPE_WATER_HIT:
-    {
-        if (drawCursor == true)
+        break;
+        case TILE_TYPE_SHIP:
         {
-            setConsoleColour(COLOUR_WATER_HIT_CURSOR);
-            std::cout << CROSS;
+            setConsoleColour(COLOUR_SHIP);
+            if (drawCursor == true)
+                tileToRender = CROSS;
+            else
+                tileToRender = WHITESPACE;
         }
-        else
+        break;
+        case TILE_TYPE_SHIP_HIT:
         {
-            setConsoleColour(COLOUR_WATER_HIT);
-            std::cout << WATER_HIT;
+            setConsoleColour(COLOUR_SHIP_HIT);
+            if (drawCursor == true)
+                tileToRender = CROSS;
+            else
+                tileToRender = WHITESPACE;
         }
-    }
-    break;
-    default:
-    {
-        setConsoleColour(CONSOLE_DEFAULT_COLOURS);
-        std::cout << char(tileType);
-    }
+        break;
+        case TILE_TYPE_WATER_HIT:
+        {
+            if (drawCursor == true)
+            {
+                setConsoleColour(COLOUR_WATER_HIT_CURSOR);
+                tileToRender = CROSS;
+            }
+            else
+            {
+                setConsoleColour(COLOUR_WATER_HIT);
+                tileToRender = WATER_HIT;
+            }
+        }
+        break;
+        default:
+        {
+            setConsoleColour(CONSOLE_DEFAULT_COLOURS);
+            tileToRender = tileType;
+        }
+        }
+
+        while (amount--)
+        {
+            std::cout << tileToRender;
+        }
     }
 }
 
