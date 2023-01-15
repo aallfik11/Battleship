@@ -64,8 +64,8 @@ void MainMenu::drawMenu()
         SMALL_RECT rect;
         rect.Top = 0;
         rect.Left = 0;
-        rect.Bottom = 19;
-        rect.Right = 40;
+        rect.Bottom = 23;
+        rect.Right = 50;
         consoleSize.X = 50;
         consoleSize.Y = 50;
         // SetConsoleScreenBufferSize(hOut, consoleSize);
@@ -74,8 +74,10 @@ void MainMenu::drawMenu()
 
     char choice;
     bool exit;
+    GameScreen::clearScreen();
     do
     {
+        GameScreen::setCursorPosition(0,0);
         std::cout << "Battleship\n\n"
                   << "1. Start\n"
                   << "2. Settings\n"
@@ -83,16 +85,17 @@ void MainMenu::drawMenu()
         switch (choice = getch())
         {
         case '1':
+            GameScreen::clearScreen();
             startGame(mCpu);
             break;
         case '2':
+            GameScreen::clearScreen();
             drawSettings();
             break;
         case '0':
             exit = true;
             break;
         }
-        // GameScreen::clearScreen();
     } while (!exit);
 }
 
@@ -103,12 +106,17 @@ void MainMenu::startGame(bool playerVsAi)
 
 void MainMenu::drawSettings() {}
 
-int GameScreen::messageCursorPositionX = 1;
-int GameScreen::messageCursorPositionY = Logic::battlefieldSize + 2;
+int GameScreen::messageCursorPositionX = 2;
+int GameScreen::messageCursorPositionY = Logic::battlefieldSize + 3;
+bool GameScreen::mMessageBoxNeedsCleaning = false;
+int GameScreen::mLastMessageBoxLength = 0;
+int GameScreen::mLastMessageBoxHeight = 0;
 
 void GameScreen::drawShipsEditor(Player *currentPlayer)
 {
+    messageManager();
     setCursorPosition(1, 0);
+    setConsoleColour(CONSOLE_DEFAULT_COLOURS);
 
     drawTile(TOP_LEFT_CORNER);
     for (int i = 0, j = 'A'; i < Logic::battlefieldSize; i++, j++)
@@ -129,11 +137,6 @@ void GameScreen::drawShipsEditor(Player *currentPlayer)
         {
             tileType = currentPlayer->playerBoard.at(j).tileType;
             tileId = currentPlayer->playerBoard.at(j).tileId;
-            // if (tileId == cursorPos)
-            // {
-            //     drawTile(tileType, 1, true);
-            // }
-            // else
             drawTile(tileType);
         }
         drawTile(VERTICAL_BORDER);
@@ -152,28 +155,13 @@ void GameScreen::drawShipsEditor(Player *currentPlayer)
                 placedShipTiles.push_back(shipTile.tileId);
 
     drawTile(WHITESPACE);
-    drawTile(LEFT_T);
-    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
-    drawTile(TOP_RIGHT_CORNER);
-    endLine();
-
-    // draw message box, might move this to displayMessage later
-    drawTile(VERTICAL_BORDER);
-    drawTile(WHITESPACE, Logic::battlefieldSize * 2 + 1);
-    drawTile(VERTICAL_BORDER);
-    endLine();
     drawTile(BOTTOM_LEFT_CORNER);
-    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
+    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize);
     drawTile(BOTTOM_RIGHT_CORNER);
-
-    for (int i = 0; i < 5; i++)
-    {
-        drawTile(WHITESPACE, Logic::battlefieldSize + 3);
-        endLine();
-    }
+    endLine();
 
     setConsoleColour(CONSOLE_DEFAULT_COLOURS);
-    
+
     // draw all placed ships
     for (auto shipTileId : placedShipTiles)
     {
@@ -313,12 +301,12 @@ void GameScreen::drawShipsEditor(Player *currentPlayer)
             break;
         }
     }
-
     setCursorPosition(2, Logic::battlefieldSize + 2);
 }
 
 void GameScreen::drawGameScreen(Player *currentPlayer)
 {
+    messageManager();
     setCursorPosition(1, 0);
     int tileType;
     int tileId;
@@ -369,33 +357,12 @@ void GameScreen::drawGameScreen(Player *currentPlayer)
     }
     // to account for endline with no offset in the previous lines
     drawTile(WHITESPACE);
-    drawTile(LEFT_T);
+    drawTile(BOTTOM_LEFT_CORNER);
     drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize);
     drawTile(BOTTOM_T);
     drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize);
-    drawTile(CROSS);
+    drawTile(BOTTOM_T);
     endLine();
-
-    // display empty message box
-    drawTile(VERTICAL_BORDER);
-    // for (int i = 0; i <= Logic::battlefieldSize * 2; i++)
-    //     drawTile(' ');
-    drawTile(WHITESPACE, Logic::battlefieldSize * 2 + 1);
-    drawTile(VERTICAL_BORDER);
-    endLine();
-
-    drawTile(BOTTOM_LEFT_CORNER);
-
-    drawTile(HORIZONTAL_BORDER, Logic::battlefieldSize * 2 + 1);
-    drawTile(BOTTOM_RIGHT_CORNER);
-    endLine();
-
-    // since I'm not using clearscreen, I need to fill any potential leftover message with whitespaces
-    for (int i = 0; i < 5; i++)
-    {
-        drawTile(WHITESPACE, Logic::battlefieldSize + 3);
-        endLine();
-    }
     setConsoleColour(CONSOLE_DEFAULT_COLOURS);
     setCursorPosition(2, Logic::battlefieldSize + 2);
 }
@@ -407,7 +374,7 @@ void GameScreen::clearScreen()
     // Get the Win32 handle representing standard output.
     // This generally only has to be done once, so we make it static.
     // static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
+    setConsoleColour(CONSOLE_DEFAULT_COLOURS);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     COORD topLeft = {0, 0};
 
@@ -449,14 +416,83 @@ void GameScreen::setConsoleColour(unsigned short colour)
 void GameScreen::setCursorPosition(int x, int y)
 {
     // also from stackoverflow
-    //  static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     std::cout.flush();
     COORD coord = {(SHORT)x, (SHORT)y};
     SetConsoleCursorPosition(hOut, coord);
 }
 
-void GameScreen::displayMessage(const char *message, unsigned short colour)
+void GameScreen::messageManager(const char *message, bool pause)
 {
+    int maxBoxLenght = 0;
+    int currentBoxLength = 0;
+    int lineCount = 0;
+    const char *messageCpy = message;
+
+    setCursorPosition(1, Logic::battlefieldSize + 2);
+    if (mMessageBoxNeedsCleaning == true)
+    {
+        for (int i = 0; i < mLastMessageBoxLength; i++)
+        {
+            drawTile(WHITESPACE, mLastMessageBoxLength);
+            endLine();
+        }
+        mMessageBoxNeedsCleaning = false;
+    }
+
+    while (*messageCpy++ != '\0')
+    {
+        if (*messageCpy == '\n' || *messageCpy == '\0')
+        {
+            if (currentBoxLength > maxBoxLenght)
+                maxBoxLenght = currentBoxLength;
+            lineCount++;
+            currentBoxLength = 0;
+            continue;
+        }
+        currentBoxLength++;
+    }
+    mLastMessageBoxLength = maxBoxLenght + 2;
+    mLastMessageBoxHeight = lineCount + 2;
+
+    setConsoleColour(CONSOLE_DEFAULT_COLOURS);
+    setCursorPosition(1, Logic::battlefieldSize + 2);
+    if (maxBoxLenght != 0)
+    {
+        drawTile(TOP_LEFT_CORNER);
+        drawTile(HORIZONTAL_BORDER, maxBoxLenght);
+        drawTile(TOP_RIGHT_CORNER);
+        endLine();
+        // draw message box for as long as it is necessary
+        for (int i = 0; i < lineCount; i++)
+        {
+            drawTile(VERTICAL_BORDER);
+            drawTile(WHITESPACE, maxBoxLenght);
+            drawTile(VERTICAL_BORDER);
+            endLine();
+        }
+        drawTile(BOTTOM_LEFT_CORNER);
+        drawTile(HORIZONTAL_BORDER, maxBoxLenght);
+        drawTile(BOTTOM_RIGHT_CORNER);
+
+        setCursorPosition(messageCursorPositionX, messageCursorPositionY);
+        while (*message != '\0')
+        {
+            if (*message == '\n')
+            {
+                endLine(2);
+            }
+            else
+                drawTile(*message);
+            message++;
+        }
+        if (pause == true)
+        {
+            int temp = getch();
+            if (temp == 0 || temp == -32 || temp == 224)
+                getch();
+        }
+        mMessageBoxNeedsCleaning = true;
+    }
 }
 
 void GameScreen::drawTile(const int tileType, int amount, bool drawCursor)
@@ -529,7 +565,6 @@ void GameScreen::drawTile(const int tileType, int amount, bool drawCursor)
 COORD GameScreen::currentConsoleCursorPosition()
 {
     // taken from Stackoverflow and slightly modified
-    //  static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(hOut, &csbi);
     return csbi.dwCursorPosition;

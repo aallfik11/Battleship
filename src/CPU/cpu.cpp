@@ -12,7 +12,6 @@ CPU::CPU()
     mTargetOrientation = 0;   // 0 is none, 1 is vertical, 2 is horizontal
     std::random_device device;
     mRng = std::mt19937(device());
-    // mRng.seed(200);
     mGuessTargetLocation = std::uniform_int_distribution<unsigned int>(0, Logic::totalBoardSize - 1);
     mGuessTargetRotation = std::uniform_int_distribution<unsigned int>(0, 3);
     mWillCPUCheat = std::uniform_int_distribution<unsigned int>(0, mDifficulty);
@@ -25,8 +24,6 @@ CPU::CPU()
     playerBoard = std::vector<MapTile>(Logic::totalBoardSize);
     opponentBoard = std::vector<MapTile>(Logic::totalBoardSize);
 
-    // for(auto &ship : playerShips)
-    //     ship = new Ship;
     this->playerShips[0] = new Ship;
     this->playerShips[1] = new Ship;
     this->playerShips[2] = new Ship;
@@ -47,6 +44,8 @@ CPU::CPU()
     for (auto &direction : mDirectionsTried)
         direction = false;
 }
+
+
 
 void CPU::placeShips()
 {
@@ -76,7 +75,6 @@ void CPU::placeShips()
 
 void CPU::attack()
 {
-    // std::cout << "\nDEBUG: CPU ATTACKING";
     mShotLanded = false;
     do
     {
@@ -85,37 +83,27 @@ void CPU::attack()
         {
             // if there is no ship that the CPU is currently shooting at, it will attempt to cheat by seeing one of the players ships. The chance for the CPU cheating is dependent on the difficulty
             if (!mWillCPUCheat(mRng) && mIsTargetDestroyed)
-            { // rolls until it finds a nondestroyed ship to hit
+            { 
+                // rolls until it finds a nondestroyed ship to hit
                 int randomShip = mCheaterTakeRandomShip(mRng);
                 while (Logic::Players.at(0)->playerShips.at(randomShip)->mIsDestroyed)
                     randomShip = mCheaterTakeRandomShip(mRng);
 
-                // unsigned int randomShipLength = Logic::Players.at(0)->playerShips.at(randomShip)->mShipLength;
                 // rolls until it finds a nondestroyed tile to hit
                 mCheaterTakeRandomShipTile = std::uniform_int_distribution<unsigned int>(0, (Logic::Players.at(0)->playerShips.at(randomShip)->mShipLength) - 1);
                 unsigned int randomShipTile = mCheaterTakeRandomShipTile(mRng);
 
                 while (Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId == 2)
                     randomShip = mCheaterTakeRandomShip(mRng);
-
-                // always starts with the first tile of the ship
-
-                // don't start with first tile, this partially breaks case 4 of cpuaihowto
-
-                // Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileType = 2;
-                // Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).mDestroyed = true;
-                // Logic::Players.at(0)->playerBoard.at(Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId).tileType = 2;
                 Logic::checkHit(Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId);
                 mInitialTileHitId = Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId;
                 opponentBoard.at(Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId).tileType = 2;
-                // Logic::checkHit(0, Logic::Players.at(0)->playerShips.at(randomShip)->mHull.at(randomShipTile).tileId);
                 mIsTargetDestroyed = Logic::shipDestroyed;
                 mTargetsHit++;
                 mLastHitTileRotation = Logic::Players.at(0)->playerShips.at(randomShip)->mDirection;
                 mDirectionsTried.at(mLastHitTileRotation) = true;
                 mLastHitTileId = mInitialTileHitId;
                 mShotLanded = true;
-                // std::cout << "\nDEBUG: CHEATING";
             }
             else
             {
@@ -132,27 +120,19 @@ void CPU::attack()
                     opponentBoard.at(testHit).tileType = 2;
                     mTargetsHit++;
                     mShotLanded = false;
-                    // if (!mIsTargetDestroyed)
                     mLastHitTileRotation = mGuessTargetRotation(mRng);
                     mDirectionsTried.at(mLastHitTileRotation) = true;
-                    // std::cout << "\nDEBUG: HIT RANDOMLY";
                 }
                 else
                 {
                     opponentBoard.at(testHit).tileType = 3;
                     mShotLanded = false;
-                    // std::cout << "\nDEBUG: MISSED RANDOMLY";
                     break;
                 }
             }
         }
-        // mLastHitTileRotation = mGuessTargetRotation(mRng);
         else
         {
-            // std::cout << "\nSHOOTING IN LINE";
-            // std::cout << "\nDEBUG: last hit rotation " << (int)mLastHitTileRotation;
-            // std::cout << "\nDEBUG: last hit location " << mLastHitTileId;
-            // getchar();
             mShootInLine(mLastHitTileId, mLastHitTileRotation);
         }
         if (mTargetsHit == 17)
@@ -160,33 +140,9 @@ void CPU::attack()
             Logic::gameOver = true;
             break;
         }
-        // getchar();
         GameScreen::drawGameScreen(Logic::Players[0]);
 
     } while (mShotLanded && !Logic::gameOver);
-}
-
-char CPU::mDetermineTargetOrientation()
-{
-    // mGuessTargetRotation = std::uniform_int_distribution<>(0, 1);
-    char randomRotation = mGuessTargetRotation(mRng);
-    bool invalidGuess = true;
-    unsigned int theoreticalShot;
-    while (invalidGuess)
-        switch (randomRotation)
-        {
-        case 0:
-            theoreticalShot = mInitialTileHitId - Logic::battlefieldSize;
-            if (theoreticalShot < ((Logic::battlefieldSize * Logic::battlefieldSize))) // check if the shot is within the bounds of the battlefield
-                                                                                       // if(opponentBoard.at(theoreticalShot).tileType == 2 &&
-                break;
-        case 1:
-            break;
-        case 2:
-            break;
-        case 3:
-            break;
-        }
 }
 
 char CPU::mShootInLine(int lastHitId, char currentDirection)
@@ -203,7 +159,7 @@ char CPU::mShootInLine(int lastHitId, char currentDirection)
             mShotLanded = true;
         }
         else
-        { // theoreticalShot = mLastHitTileId - Logic::battlefieldSize;
+        {
             while (!Logic::checkOutOfBounds(theoreticalShot, mLastHitTileRotation) && opponentBoard.at(theoreticalShot).tileType == 2)
             {
                 theoreticalShot -= Logic::battlefieldSize;
@@ -282,7 +238,6 @@ bool CPU::mCheckShotVailidity(unsigned int theoreticalShot)
             mShotLanded = true;
             if (Logic::shipDestroyed)
             {
-                // std::cout << "DEBUG: PLAYER SHIP DESTROYED, ROLLING NEW TARGET" << std::endl;
                 mIsTargetDestroyed = true;
                 mResetDirectionsTried();
             }
@@ -298,11 +253,6 @@ bool CPU::mCheckShotVailidity(unsigned int theoreticalShot)
     }
     else
     {
-        // std::cout << "DEBUG: DIRECTION SETUP" << std::endl
-        //           << "NORTH: " << mDirectionsTried.at(0) << std::endl
-        //           << "SOUTH: " << mDirectionsTried.at(2) << std::endl
-        //           << "EAST: " << mDirectionsTried.at(1) << std::endl
-        //           << "WEST: " << mDirectionsTried.at(3) << std::endl;
         mDirectionSetup();
         mLastHitTileId = mInitialTileHitId;
         mShotLanded = true;

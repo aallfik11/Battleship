@@ -11,8 +11,8 @@ static const char ARROW_KEY_LEFT = 75;
 static const char ARROW_KEY_RIGHT = 77;
 static const char KEY_ENTER = 13;
 static const char KEY_BACKSPACE = 8;
-static const char KEY_ROTATE_RIGHT = 93;
-static const char KEY_ROTATE_LEFT = 91;
+static const char KEY_ROTATE_LEFT = 93;
+static const char KEY_ROTATE_RIGHT = 91;
 
 Coordinates::Coordinates(const Coordinates &xy)
 {
@@ -138,14 +138,10 @@ void Logic::gameLoop(bool playerVsAi)
         */
         GameScreen::opponentShipStatus();
         Player1.attack();
-
-        // std::cout << "\nDEBUG: before check, player attack function quit with no issue";
-        // std::cout << "\nDEBUG: gameOver status:" << gameOver;
         if (!gameOver)
         {
             GameScreen::opponentShipStatus();
             currentIdlingPlayerId = 0;
-            // std::cout << "\nDEBUG: BEFORE CPU ATTACKS";
             Player2->attack();
         }
     }
@@ -325,7 +321,6 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                             throw Logic::BadShipPlacement();
 
                         ship->buildHull(mCursorTileID);
-                        // std::cout << "DEBUG: SHIP PLACED";
                     }
                     catch (const std::exception &e)
                     {
@@ -428,13 +423,15 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
     }
     else
     {
-
-        std::cout << "Select Ship Type:\n" // try adding colors to guide the player. Green - unplaced, red - placed
-                  << "Carrier - Size 5 - Input 'C' or 'c'\n"
-                  << "Battleship - Size 4 - Input 'B' or 'b'\n"
-                  << "Destroyer - Size 3 - Input 'D' or 'd'\n"
-                  << "Submarine - Size 3 - Input 'S' or 's'\n"
-                  << "Patrol Boat - Size 2 - Input 'P' or 'p'\n";
+        char *message = "Select Ship Type:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\n";
+        GameScreen::messageManager(message);
+        //     std::cout
+        // << "Select Ship Type:\n" // try adding colors to guide the player. Green - unplaced, red - placed
+        // << "Carrier - Size 5 - Input 'C' or 'c'\n"
+        // << "Battleship - Size 4 - Input 'B' or 'b'\n"
+        // << "Destroyer - Size 3 - Input 'D' or 'd'\n"
+        // << "Submarine - Size 3 - Input 'S' or 's'\n"
+        // << "Patrol Boat - Size 2 - Input 'P' or 'p'\n";
         input = getch();
         if (input == 0 || input == -32 || input == 224)
             getch();
@@ -463,16 +460,20 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
             return 1;
             break;
         default:
-            std::cout << "Invalid Ship Type Selected\n Ship Types Available:\n"
-                      << "Carrier - Size 5 - Input 'C' or 'c'\n"
-                      << "Battleship - Size 4 - Input 'B' or 'b'\n"
-                      << "Destroyer - Size 3 - Input 'D' or 'd'\n"
-                      << "Submarine - Size 3 - Input 'S' or 's'\n"
-                      << "Patrol Boat - Size 2 - Input 'P' or 'p'\n"
-                      << "Press Any Key To Try Selecting a Ship Again...";
-            input = getch();
-            if (input == 0 || input == -32 || input == 224)
-                getch();
+        {
+            char* message = "Invalid Ship Type Selected\n Ship Types Available:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\nPress Any Key To Try Selecting a Ship Again...";
+            // std::cout << "Invalid Ship Type Selected\n Ship Types Available:\n"
+            //           << "Carrier - Size 5 - Input 'C' or 'c'\n"
+            //           << "Battleship - Size 4 - Input 'B' or 'b'\n"
+            //           << "Destroyer - Size 3 - Input 'D' or 'd'\n"
+            //           << "Submarine - Size 3 - Input 'S' or 's'\n"
+            //           << "Patrol Boat - Size 2 - Input 'P' or 'p'\n"
+            //           << "Press Any Key To Try Selecting a Ship Again...";
+            // input = getch();
+            // if (input == 0 || input == -32 || input == 224)
+            //     getch();
+            GameScreen::messageManager(message, true);
+        }
             return 0;
         }
     }
@@ -480,9 +481,6 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
 
 void Player::placeShips()
 {
-    // std::array<MapTile, 100> tempBoard = playerBoard;
-    // std::array<Ship, 5> tempShipArray = playerShips;
-
     bool allPlaced = false;
     while (!allPlaced)
     {
@@ -497,7 +495,6 @@ void Player::placeShips()
         if (allPlacedCheck == 5)
             allPlaced = true;
     }
-    std::cout << this;
     for (auto ship : playerShips)
     {
         for (auto hullTile : ship->mHull)
@@ -514,15 +511,13 @@ void Player::attack()
     do
     {
         GameScreen::drawGameScreen(this);
-        // std::cout << "DEBUG: PLAYER STARTING TO ATTACK";
-        // check if player has confirmed their shot coordinates
         if (controls(NULL, true) == KEY_ENTER)
         {
             // check if target coordinates are eligible for shooting, in case it's a tile that has already been shot at, the player is prevented from choosing that tile
             if (opponentBoard.at(mCursorTileID).tileType == 2 || opponentBoard.at(mCursorTileID).tileType == 3)
             {
-                std::cout << "Target Sector Has Been Already Hit, Press Enter to Choose a New Target";
-                getchar();
+                GameScreen::messageManager("Target Sector Has Been Already Hit\nPress Any Key to Resume and Choose a New Target", true);
+
                 shotLanded = true;
                 continue;
             }
@@ -532,14 +527,12 @@ void Player::attack()
                 shotLanded = true;
                 if (Logic::shipDestroyed == true)
                     GameScreen::opponentShipStatus();
-                // std::cout << "DEBUG: SHOT LANDED" << std::endl;
                 opponentBoard.at(mCursorTileID).tileType = 2;
                 mTargetsHit++;
             }
             else
             {
                 shotLanded = false;
-                // std::cout << "DEBUG: SHOT MISSED " << std::endl;
                 opponentBoard.at(mCursorTileID).tileType = 3;
             }
             if (mTargetsHit == 17) // 17 is the total hp of all ships combined
@@ -551,7 +544,6 @@ void Player::attack()
         else
             shotLanded = true;
     } while (shotLanded);
-    // std::cout << "DEBUG: Player finished attacking";
 }
 
 /*         N

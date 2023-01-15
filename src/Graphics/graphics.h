@@ -30,6 +30,9 @@ public:
 
 class GameScreen
 {
+    static bool mMessageBoxNeedsCleaning;
+    static int mLastMessageBoxLength;
+    static int mLastMessageBoxHeight;
 public:
     static int messageCursorPositionX;
     static int messageCursorPositionY;
@@ -40,7 +43,7 @@ public:
     static void clearScreen();
     static void setCursorPosition(int x, int y);
     static void setConsoleColour(unsigned short colour);
-    static void displayMessage(const char *message, unsigned short colour);
+    static void messageManager(const char *message = "", bool pause = false);
     static void drawTile(int tileType, int amount = 1, bool drawCursor = false);
     static COORD currentConsoleCursorPosition();
     static void endLine(int offset = 1);
