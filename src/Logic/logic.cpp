@@ -363,56 +363,67 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
         {
             if (!attacking && ship != NULL)
                 ship->deleteHull();
-            try
+
+            // try implementing backspace functionality
+            unsigned int rowInputInt = -1;
+            std::string inputString = "0";
+            inputString += input;
+            input = tolower(input);
+            input -= 97;
+            // char input2;
+            // std::cin >> rowInput;
+
+            // new system that would work with backspace, work on that later
+            // do
+            // {
+
+            //     input2 = getch();
+            //     if (input2 == 0 || input2 == -32 || input2 == 224)
+            //         getch();
+            //     if(input2 == KEY_BACKSPACE)
+            //         rowInput.pop_back();
+            // } while (stoi(rowInput) != 0);
+
+            do
             {
-                // try implementing backspace functionality
-                std::string rowInput = "0";
-                unsigned int rowInputInt = -1;
-                std::cout << input;
-                input = tolower(input);
-                input -= 97;
-                char input2;
-                std::cin >> rowInput;
-
-                // new system that would work with backspace, work on that later
-                // do
-                // {
-
-                //     input2 = getch();
-                //     if (input2 == 0 || input2 == -32 || input2 == 224)
-                //         getch();
-                //     if(input2 == KEY_BACKSPACE)
-                //         rowInput.pop_back();
-                // } while (stoi(rowInput) != 0);
-
-                rowInputInt = stoi(rowInput);
-
-                if (input > 25 || input >= Logic::battlefieldSize)
+                const char* message = inputString.substr(1).c_str();
+                GameScreen::messageManager(message);
+                // std::cout << inputString << std::endl;
+                char input2 = getch();
+                if (input2 == KEY_ENTER)
+                    break;
+                if (input2 == KEY_BACKSPACE)
                 {
-                    GameScreen::messageManager("Invalid Column Selection");
-                    return 0;
+                    inputString.pop_back();
+                    continue;
                 }
-                if (rowInputInt > 25 || rowInputInt >= Logic::battlefieldSize)
+                if (input2 == 0 || input2 == -32 || input2 == 224)
                 {
-                    GameScreen::messageManager("Invalid Row Selection");
-                    return 0;
-                }
-
-                mCurrentColumn = input;
-                mCurrentRow = rowInputInt;
-                mCursorTileID = (mCurrentRow * Logic::battlefieldSize) + mCurrentColumn;
-                // add checkshiplacement here
-            }
-            catch (const std::exception &e)
-            {
-
-                std::cout << e.what() << '\n'
-                          << "Press Any Key to Try Again...";
-                input = getch();
-                if (input == 0 || input == -32 || input == 224)
                     getch();
+                    continue;
+                }
+                inputString += input2;
+
+            } while (inputString != "0");
+            if (inputString.size() == 1)
+                return 0;
+            // std::cout << (inputString.substr(1));
+            rowInputInt = stoi(inputString.substr(2)); //doesn't fully work for now
+
+            if (input > 25 || input >= Logic::battlefieldSize)
+            {
+                GameScreen::messageManager("Invalid Column Selection");
+                return 0;
             }
-            return 0;
+            if (rowInputInt > 25 || rowInputInt >= Logic::battlefieldSize)
+            {
+                GameScreen::messageManager("Invalid Row Selection");
+                return 0;
+            }
+
+            mCurrentColumn = input;
+            mCurrentRow = rowInputInt;
+            mCursorTileID = (mCurrentRow * Logic::battlefieldSize) + mCurrentColumn;
         }
     }
     else

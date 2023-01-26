@@ -507,18 +507,35 @@ void GameScreen::messageManager(const char *message, bool pause)
         mMessageBoxNeedsCleaning = false;
     }
 
-    while (*messageCpy++ != '\0')
+    while (*messageCpy++ != '\0') // I have no idea why this works (almost), because i'm incrementing the value, not the pointer
     {
+        std::cout << char(0);
         if (*messageCpy == '\n' || *messageCpy == '\0')
         {
             if (currentBoxLength > maxBoxLenght)
                 maxBoxLenght = currentBoxLength + 1;
             lineCount++;
+            if (*messageCpy == '\0')
+                break;
             currentBoxLength = 0;
+            // messageCpy++;
             continue;
         }
         currentBoxLength++;
+        // messageCpy++;
     }
+    // for (int i = 0; i < strlen(message); i++)
+    // {
+    //     if (*messageCpy == '\n' || *messageCpy == '\0')
+    //     {
+    //         if (currentBoxLength > maxBoxLenght)
+    //             maxBoxLenght = currentBoxLength + 1;
+    //         lineCount++;
+    //         currentBoxLength = 0;
+    //         continue;
+    //     }
+    //     currentBoxLength++;
+    // }
     mLastMessageBoxLength = maxBoxLenght + 2;
     mLastMessageBoxHeight = lineCount + 2;
 
