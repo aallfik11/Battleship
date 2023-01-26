@@ -255,7 +255,7 @@ Player::Player()
 
 char Player::controls(Ship *ship = NULL, bool attacking = false)
 {
-    char input;
+    char input = 0;
     bool shipSelector = false;
     if (mEditorModeCurrentSelectedShip == NULL)
     {
@@ -321,17 +321,18 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                 if (attacking == true)
                     return KEY_ENTER;
                 else
-                    try
-                    {
-                        if (Logic::checkShipPlacement(mCursorTileID, ship->mDirection, ship->mShipLength, playerShips))
-                            throw Logic::BadShipPlacement();
-
+                    // try
+                    // {
+                    if (Logic::checkShipPlacement(mCursorTileID, ship->mDirection, ship->mShipLength, playerShips))
+                        // throw Logic::BadShipPlacement();
+                        GameScreen::messageManager("Invalid Ship Placement", true);
+                    else
                         ship->buildHull(mCursorTileID);
-                    }
-                    catch (const std::exception &e)
-                    {
-                        std::cerr << e.what() << '\n';
-                    }
+                // }
+                // catch (const std::exception &e)
+                // {
+                //     std::cerr << e.what() << '\n';
+                // }
             }
             break;
             case KEY_ROTATE_LEFT:
@@ -384,18 +385,18 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
                 //         rowInput.pop_back();
                 // } while (stoi(rowInput) != 0);
 
-                try
-                {
-                    rowInputInt = stoi(rowInput);
-                }
-                catch (const std::exception &e)
-                {
-                }
+                rowInputInt = stoi(rowInput);
 
                 if (input > 25 || input >= Logic::battlefieldSize)
-                    throw Logic::BadColumn();
+                {
+                    GameScreen::messageManager("Invalid Column Selection");
+                    return 0;
+                }
                 if (rowInputInt > 25 || rowInputInt >= Logic::battlefieldSize)
-                    throw Logic::BadRow();
+                {
+                    GameScreen::messageManager("Invalid Row Selection");
+                    return 0;
+                }
 
                 mCurrentColumn = input;
                 mCurrentRow = rowInputInt;
@@ -451,9 +452,9 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
             char *message = "Invalid Ship Type Selected\n Ship Types Available:\nCarrier - Size 5 - Input 'C' or 'c'\nBattleship - Size 4 - Input 'B' or 'b'\nDestroyer - Size 3 - Input 'D' or 'd'\nDestroyer - Size 3 - Input 'D' or 'd'\nSubmarine - Size 3 - Input 'S' or 's'\nPatrol Boat - Size 2 - Input 'P' or 'p'\nPress Any Key To Try Selecting a Ship Again...";
             GameScreen::messageManager(message, true);
         }
-            return 0;
         }
     }
+    return 0;
 }
 
 void Player::placeShips()
@@ -530,6 +531,15 @@ void Player::winner()
     int temp = getch();
     if (temp == 0 || temp == -32 || temp == 224)
         getch();
+}
+
+Player::~Player()
+{
+    delete playerShips[0];
+    delete playerShips[1];
+    delete playerShips[2];
+    delete playerShips[3];
+    delete playerShips[4];
 }
 
 /*         N

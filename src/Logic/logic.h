@@ -98,6 +98,7 @@ public:
     std::vector<MapTile> opponentBoard;
     std::array<Ship*, 5> playerShips;
     Player();
+    ~Player();
     char controls(Ship *ship, bool attacking);
     virtual void placeShips();
     virtual void attack();

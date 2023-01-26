@@ -29,6 +29,7 @@ class CPU : public Player
 
 public:
     CPU(int difficulty);
+    ~CPU();
     void placeShips();
     void attack();
     void winner();

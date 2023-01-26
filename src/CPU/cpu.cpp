@@ -346,3 +346,12 @@ void CPU::winner()
     if (temp == 0 || temp == -32 || temp == 224)
         getch();
 }
+
+CPU::~CPU()
+{
+    delete playerShips[0];
+    delete playerShips[1];
+    delete playerShips[2];
+    delete playerShips[3];
+    delete playerShips[4];
+}

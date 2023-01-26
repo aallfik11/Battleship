@@ -512,7 +512,7 @@ void GameScreen::messageManager(const char *message, bool pause)
         if (*messageCpy == '\n' || *messageCpy == '\0')
         {
             if (currentBoxLength > maxBoxLenght)
-                maxBoxLenght = currentBoxLength;
+                maxBoxLenght = currentBoxLength + 1;
             lineCount++;
             currentBoxLength = 0;
             continue;
