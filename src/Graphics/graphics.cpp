@@ -491,7 +491,7 @@ void GameScreen::setCursorPosition(int x, int y)
 
 void GameScreen::messageManager(const char *message, bool pause)
 {
-    int maxBoxLenght = 0;
+    int maxBoxLength = 0;
     int currentBoxLength = 0;
     int lineCount = 0;
     const char *messageCpy = message;
@@ -507,56 +507,61 @@ void GameScreen::messageManager(const char *message, bool pause)
         mMessageBoxNeedsCleaning = false;
     }
 
-    while (*messageCpy++ != '\0') // I have no idea why this works (almost), because i'm incrementing the value, not the pointer
+    // while (*(messageCpy++) != '\0')
+    // {
+    //     std::cout << char(0);
+    //     if (*messageCpy == '\n' || *messageCpy == '\0')
+    //     {
+    //         if (currentBoxLength > maxBoxLength)
+    //             maxBoxLength = currentBoxLength + 1;
+    //         lineCount++;
+    //         if (*messageCpy == '\0')
+    //             break;
+    //         currentBoxLength = 0;
+    //         // messageCpy++;
+    //         continue;
+    //     }
+    //     currentBoxLength++;
+    //     // messageCpy++;
+    // }
+    while (true)
     {
-        std::cout << char(0);
+        // std::cout << char(0);
         if (*messageCpy == '\n' || *messageCpy == '\0')
         {
-            if (currentBoxLength > maxBoxLenght)
-                maxBoxLenght = currentBoxLength + 1;
+            if (currentBoxLength > maxBoxLength)
+                maxBoxLength = currentBoxLength;
             lineCount++;
             if (*messageCpy == '\0')
                 break;
             currentBoxLength = 0;
-            // messageCpy++;
+            messageCpy++;
             continue;
         }
         currentBoxLength++;
-        // messageCpy++;
+        messageCpy++;
     }
-    // for (int i = 0; i < strlen(message); i++)
-    // {
-    //     if (*messageCpy == '\n' || *messageCpy == '\0')
-    //     {
-    //         if (currentBoxLength > maxBoxLenght)
-    //             maxBoxLenght = currentBoxLength + 1;
-    //         lineCount++;
-    //         currentBoxLength = 0;
-    //         continue;
-    //     }
-    //     currentBoxLength++;
-    // }
-    mLastMessageBoxLength = maxBoxLenght + 2;
+    mLastMessageBoxLength = maxBoxLength + 2;
     mLastMessageBoxHeight = lineCount + 2;
 
     setConsoleColour(CONSOLE_DEFAULT_COLOURS);
     setCursorPosition(1, Logic::battlefieldSize + 2);
-    if (maxBoxLenght != 0)
+    if (maxBoxLength != 0)
     {
         drawTile(TOP_LEFT_CORNER);
-        drawTile(HORIZONTAL_BORDER, maxBoxLenght);
+        drawTile(HORIZONTAL_BORDER, maxBoxLength);
         drawTile(TOP_RIGHT_CORNER);
         endLine();
         // draw message box for as long as it is necessary
         for (int i = 0; i < lineCount; i++)
         {
             drawTile(VERTICAL_BORDER);
-            drawTile(WHITESPACE, maxBoxLenght);
+            drawTile(WHITESPACE, maxBoxLength);
             drawTile(VERTICAL_BORDER);
             endLine();
         }
         drawTile(BOTTOM_LEFT_CORNER);
-        drawTile(HORIZONTAL_BORDER, maxBoxLenght);
+        drawTile(HORIZONTAL_BORDER, maxBoxLength);
         drawTile(BOTTOM_RIGHT_CORNER);
 
         setCursorPosition(messageCursorPositionX, messageCursorPositionY);

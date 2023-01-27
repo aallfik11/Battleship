@@ -3,6 +3,7 @@
 #include <cctype>
 #include <windows.h>
 #include <conio.h>
+#include <cstdlib>
 #include "../Graphics/graphics.h"
 #include "../CPU/cpu.h"
 static const char ARROW_KEY_UP = 72;
@@ -408,21 +409,21 @@ char Player::controls(Ship *ship = NULL, bool attacking = false)
             if (inputString.size() == 1)
                 return 0;
             // std::cout << (inputString.substr(1));
-            rowInputInt = stoi(inputString.substr(2)); //doesn't fully work for now
+            rowInputInt = atoi(inputString.substr(2).c_str()); //doesn't fully work for now
 
-            if (input > 25 || input >= Logic::battlefieldSize)
+            if (input >= Logic::battlefieldSize)
             {
                 GameScreen::messageManager("Invalid Column Selection");
                 return 0;
             }
-            if (rowInputInt > 25 || rowInputInt >= Logic::battlefieldSize)
+            if (rowInputInt == 0 || rowInputInt > Logic::battlefieldSize)
             {
                 GameScreen::messageManager("Invalid Row Selection");
                 return 0;
             }
 
             mCurrentColumn = input;
-            mCurrentRow = rowInputInt;
+            mCurrentRow = rowInputInt-1;
             mCursorTileID = (mCurrentRow * Logic::battlefieldSize) + mCurrentColumn;
         }
     }
